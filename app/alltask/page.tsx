@@ -40,6 +40,41 @@ export default function Page() {
     fetchTasks(); // ✅ เรียกใช้งานจริง
   }, []);
 
+  async function handleDeleteTaskClick(id: string, image_url: string) {
+    if( confirm("คุณต้องการลบข้อมูลนี้หรือไม่ ?")){
+      //ลบรูปออกจาก storage (ถ้ามีรูป)
+      if (image_url != ""){//ตรวจสอบก่อนว่ามีรูปไหม
+        //เอาเฉพาะชื่อรูปจาก image_url เก็บในตัวแปร
+        const image_name = image_url.split("/").pop() as string;
+        //ลบรูปออกจาก storage
+        const{ data,error } = await supabase.storage
+        .from ("task_bk")
+        .remove([image_name]);
+
+         if(error){
+        alert('พบปัญหาในการลบข้อมูล กรุณาลองใหม่อีกครั้ง...');
+        console.log(error.message);
+        return;
+      }
+      }
+
+      //ลบข้อมูลออกจากตาราง supabase
+      const {data, error} = await supabase
+      .from("task_tb")
+      .delete()
+      .eq("id", id)
+
+      if(error){
+        alert('พบปัญหาในการลบข้อมูล กรุณาลองใหม่อีกครั้ง...');
+        console.log(error.message);
+        return;
+      }
+      
+      //ลบข้อมูลออกจากรายการที่แสดงบนหน้าจอ
+      setTasks(tasks.filter((tasks) => tasks.id !== id));
+    }
+  }
+
   return (
     <>
       <div className="flex flex-col w-3/4 mx-auto">
@@ -102,8 +137,8 @@ export default function Page() {
                       {new Date(task.update_at).toLocaleDateString()}
                     </td>
                     <td className="border border-black p-2 text-center space-x-2">
-                      <Link href="#" >แก้ไข</Link>
-                      <button className="text-red-600">ลบ</button>
+                      <Link href="{`/edittask/${task.id}`}" className="text-green-500">แก้ไข</Link>
+                      <button onClick={() =>handleDeleteTaskClick(task.id, task.image_url)} className="text-red-600">ลบ</button>
                     </td>
                   </tr>
                 )
